@@ -1,0 +1,144 @@
+---
+title: "Revisión de simulación energética"
+author: Guillermo Barrios
+format: 
+    html:
+        embed-resources: true
+    pdf: default
+
+execute:
+    echo: false
+lang: es
+language: 
+    es:
+        title-block-author-single: "Autor"
+
+---
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+from iertools.read import read_sql
+from dateutil.parser import parse
+import matplotlib.dates as mdates
+
+f = '../osm/CE_CASA 3D_270224/run/eplusout.sql'
+osm = read_sql(f,alias=True)
+data = osm.data
+columnas = data.columns
+f1 = parse('2006-01-01')
+f2 = f1 + pd.Timedelta('7D')
+scs = osm.construction_systems
+```
+
+# Introduccion
+
+En este reporte se revisa la simulación energética del archivo 
+
+``` `{python} f` ```. 
+
+Se revisa lo siguiente:
+
+1. Zonas térmicas y temperaturas de las mismas.
+1. Conteo de personas por zona térmica.
+1. Cargas térmicas por equipo eléctrico.
+1. Sistemas constructivos y materiales.
+
+Las figuras presentadas corresponden del ``` `{python} str(f1)` ``` al ``` `{python} str(f2)` ```.
+
+
+## Zonas térmicas y temperaturas
+
+
+```{python}
+
+Tis = [columna for columna in columnas if 'Ti_' in columna]
+```
+La lista de zonas térmicas es: 
+
+``` `{python} Tis` ``` 
+
+Y la temperatura en las zonas térmicas se ve así:
+
+```{python}
+fig, ax = plt.subplots(figsize=(9,3))
+
+for Ti in Tis:
+    ax.plot(data[Ti],label=Ti)
+ax.legend()
+ax.set_xlim(f1,f2)
+
+locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+formatter = mdates.ConciseDateFormatter(locator)
+ax.xaxis.set_major_locator(locator)
+ax.xaxis.set_major_formatter(formatter)
+```
+
+
+## Conteo de personas por zona térmica
+
+
+```{python}
+
+personas = [columna for columna in columnas if 'People Occupant' in columna]
+```
+La lista de zonas térmicas con personas es:
+
+``` `{python} personas` ``` 
+
+Y la ocupación por zona térmica se ve así:
+
+```{python}
+fig, ax = plt.subplots(figsize=(9,3))
+
+ax.stackplot(data.index, 
+            *[data[persona] for persona in personas], 
+            labels=personas)
+
+ax.set_xlim(f1,f2)
+ax.legend()
+
+locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+formatter = mdates.ConciseDateFormatter(locator)
+ax.xaxis.set_major_locator(locator)
+ax.xaxis.set_major_formatter(formatter)
+```
+
+
+## Cargas térmicas por equipo eléctrico
+
+
+```{python}
+
+equipos = [columna for columna in columnas if 'Electric Equipment Electricity Rate' in columna]
+```
+La lista de equipo eléctrico en la simulación es:
+
+``` `{python} equipos` ``` 
+
+Y las cargas térmicas se ven:
+
+```{python}
+fig, ax = plt.subplots(figsize=(9,3))
+
+ax.stackplot(data.index, *[data[persona] for persona in equipos], labels=personas)
+
+ax.set_xlim(f1,f2)
+ax.legend() 
+
+locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+formatter = mdates.ConciseDateFormatter(locator)
+ax.xaxis.set_major_locator(locator)
+ax.xaxis.set_major_formatter(formatter)
+```
+
+## Sistemas constructivos
+
+
+::: {.callout-note appearance="simple"}
+
+## Trabajo pendiente
+
+ Quarto tiene problemas para desplegar el código que va en esta parte, pero se  puede ver en la libreta. Se debe arreglar la función get_construction para que no imprima, si no que regrese un DF.
+
+:::
